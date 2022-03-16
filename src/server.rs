@@ -19,7 +19,7 @@ use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::Stream;
 
-use rawsample::{SampleFormat, SampleReader};
+// use rawsample::{SampleFormat, SampleReader};
 
 mod utils;
 use utils::my_utils::get_timestamp;
@@ -104,6 +104,9 @@ impl Greeter for MyGreeter {
         request: Request<HelloRequest>,
     ) -> Result<Response<HelloReply>, Status> {
         println!("Got a request: {:?}", request);
+
+        let extension = request.extensions().get::<MyExtension>().unwrap();
+        println!("extension data from interceptor is: {}", extension.jwt);
 
         let reply = hello_world::HelloReply {
             message: format!("Hello {}!", request.into_inner().name).into(),
@@ -225,42 +228,46 @@ impl Greeter for MyGreeter {
     }
 }
 
-async fn get_float_vector_samples_from_bytes_samples(bytes: &[u8]) -> Vec<f32> {
-    // let mut reader = SampleReader::new(bytes);
-    // let mut samples = Vec::new();
-    // while let Some(sample) = reader.next().await {
-    //     samples.push(sample.unwrap());
-    // }
-    // samples
-    let mut values = Vec::new();
-    let mut slice: &[u8] = &bytes;
-    // read the raw bytes back as samples into the new vec
-    f32::read_all_samples(&mut slice, &mut values, &SampleFormat::S16LE).unwrap();
-    values
-}
+// async fn get_float_vector_samples_from_bytes_samples(bytes: &[u8]) -> Vec<f32> {
+//     // let mut reader = SampleReader::new(bytes);
+//     // let mut samples = Vec::new();
+//     // while let Some(sample) = reader.next().await {
+//     //     samples.push(sample.unwrap());
+//     // }
+//     // samples
+//     let mut values = Vec::new();
+//     let mut slice: &[u8] = &bytes;
+//     // read the raw bytes back as samples into the new vec
+//     f32::read_all_samples(&mut slice, &mut values, &SampleFormat::S16LE).unwrap();
+//     values
+// }
 
-async fn add_float_vector_samples_togather(
-    vector_signal1: Vec<f32>,
-    vector_signal2: Vec<f32>,
-) -> Vec<f32> {
-    if vector_signal1.len() != vector_signal2.len() {
-        return vector_signal1;
-    }
+// async fn add_float_vector_samples_togather(
+//     vector_signal1: Vec<f32>,
+//     vector_signal2: Vec<f32>,
+// ) -> Vec<f32> {
+//     if vector_signal1.len() != vector_signal2.len() {
+//         return vector_signal1;
+//     }
 
-    let mut vector_signal_merged = Vec::new();
+//     let mut vector_signal_merged = Vec::new();
 
-    for i in 0..vector_signal1.len() {
-        vector_signal_merged.push(vector_signal1[i] + vector_signal2[i]);
-    }
+//     for i in 0..vector_signal1.len() {
+//         vector_signal_merged.push(vector_signal1[i] + vector_signal2[i]);
+//     }
 
-    vector_signal_merged
-}
+//     vector_signal_merged
+// }
 
 /// This function will get called on each inbound request, if a `Status`
 /// is returned, it will cancel the request and return that status to the
 /// client.
 fn intercept(mut req: Request<()>) -> Result<Request<()>, Status> {
     println!("Intercepting request: {:?}", req);
+
+    let metadata = req.metadata();
+    let jwt: &str = metadata.get("jwt").unwrap().to_str().unwrap().into();
+    println!("The JWT is: {:?}", jwt);
 
     // Set an extension that can be retrieved by `say_hello`
     req.extensions_mut().insert(MyExtension {
