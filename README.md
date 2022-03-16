@@ -1,4 +1,4 @@
-# This is the rust service that controls the voice flow
+# This is the rust service that acts as a gateway
 
 ## run
 ```bash
