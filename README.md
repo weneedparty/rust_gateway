@@ -8,3 +8,8 @@ or
 
 proxychains4 cargo run --bin server #For Chinese
 ```
+
+## test
+```bash
+cargo test -- --color always --nocapture
+```
