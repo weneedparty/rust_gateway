@@ -24,6 +24,9 @@ use tokio_stream::Stream;
 mod utils;
 use utils::my_utils::get_timestamp;
 
+mod account_service;
+use account_service::account_service_implementation;
+
 #[derive(Debug)]
 pub struct User {
     uuid: String,
@@ -286,8 +289,7 @@ struct MyExtension {
     jwt: String,
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let (broadcast_sender, _broadcast_receiver) = broadcast::channel(32); //A multi-producer, multi-consumer broadcast queue. Each sent value is seen by all consumers.
                                                                           // let another_broadcast_sender = broadcast::Sender::clone(&broadcast_sender);
     let address_string = "0.0.0.0:40051";
@@ -306,9 +308,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // structs.
     let svc = GreeterServer::with_interceptor(greeter, intercept);
 
-    println!("Server is running on http://{} ...", address_string);
+    println!(
+        "Hello World Server is running on http://{} ...",
+        address_string
+    );
 
     Server::builder().add_service(svc).serve(addr).await?;
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("");
+    let res = tokio::try_join!(run(), account_service_implementation::run());
+
+    match res {
+        Ok((_first, _second)) => {
+            // do something with the values
+            println!("processing finished");
+        }
+        Err(err) => {
+            println!("processing failed; error = {}", err);
+        }
+    }
 
     Ok(())
 }
