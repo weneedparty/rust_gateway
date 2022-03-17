@@ -7,18 +7,12 @@ pub mod account_service_implementation {
 
     use account_service::account_service_server::{AccountService, AccountServiceServer};
     use account_service::{
-        Empty, HelloReply, HelloRequest, JwtIsOkReply, JwtIsOkRequest, JwtObject,
-        RegisterConfirmReply, RegisterConfirmRequest, RegisterReply, RegisterRequest,
+        HelloReply, HelloRequest, JwtIsOkReply, JwtIsOkRequest, JwtObject, RegisterConfirmReply,
+        RegisterConfirmRequest, RegisterReply, RegisterRequest,
     };
 
     use std::sync::Arc;
     use tokio::sync::Mutex;
-
-    use futures::stream::StreamExt;
-    use std::pin::Pin;
-    use tokio::sync::broadcast;
-    use tokio_stream::wrappers::BroadcastStream;
-    use tokio_stream::Stream;
 
     // #[derive(Debug, Default)]
     #[derive(Debug)]
