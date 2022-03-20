@@ -10,16 +10,16 @@ use account_service::{
     RegisterConfirmRequest, RegisterReply, RegisterRequest,
 };
 
-use std::sync::Arc;
-use tokio::sync::Mutex;
+// use std::sync::Arc;
+// use tokio::sync::Mutex;
 
 use crate::account_service::python_account_service;
 
 // #[derive(Debug, Default)]
 #[derive(Debug)]
 pub struct MyAccountService {
-    shared_string: Arc<Mutex<String>>,
-    //use Arc<Mutex<T>> to share variables across threads
+    // shared_string: Arc<Mutex<String>>,
+//use Arc<Mutex<T>> to share variables across threads
 }
 
 #[tonic::async_trait]
@@ -137,9 +137,9 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let address_string = "0.0.0.0:40054";
     let addr = address_string.parse()?;
 
-    let a_string = Arc::new(Mutex::new(String::from("Hello, world!")));
+    // let a_string = Arc::new(Mutex::new(String::from("Hello, world!")));
     let my_account_service = MyAccountService {
-        shared_string: a_string,
+        // shared_string: a_string,
     };
 
     let svc = AccountServiceServer::new(my_account_service);

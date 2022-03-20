@@ -82,10 +82,6 @@ pub async fn auth_jwt(jwt: String) -> Result<String, Box<dyn std::error::Error>>
 mod tests {
     use super::*;
 
-    // async fn setup() {
-    //     tokio_test::block_on(async {});
-    // }
-
     #[tokio::test]
     async fn test_user_register_request() {
         let mut ok = false;
@@ -102,21 +98,4 @@ mod tests {
 
         assert!(ok);
     }
-
-    // #[tokio::test]
-    // async fn test_user_register_request_confirm() {
-    //     let mut ok = false;
-
-    //     match user_register_confirm(String::from("hi.ss.com"), String::from("hh")).await {
-    //         Ok(result) => {
-    //             println!("register request confirm is sent: {:?}", result);
-    //             ok = true;
-    //         }
-    //         Err(err) => {
-    //             println!("Error on register request confirm: {:?}", err);
-    //         }
-    //     }
-
-    //     assert!(ok);
-    // }
 }

@@ -2,12 +2,15 @@ pub mod room_control_service_implementation {
     use tokio::runtime::Builder as RuntimeBuilder;
     use tonic::{transport::Server, Request, Response, Status};
 
+    const TYPESCRIPT_ROOM_CONTROL_SERVICE_ADDRESS: &str = "http://127.0.0.1:40053/";
+
     pub mod room_control_service {
         tonic::include_proto!("room_control_service"); //This is the package name?
     }
 
     use crate::account_service::python_account_service;
 
+    use room_control_service::room_control_service_client::RoomControlServiceClient;
     use room_control_service::room_control_service_server::{
         RoomControlService, RoomControlServiceServer,
     };
@@ -48,7 +51,20 @@ pub mod room_control_service_implementation {
         ) -> Result<Response<CreateRoomResponse>, Status> {
             println!("Got a request: {:?}", request);
 
-            let reply = CreateRoomResponse { success: true };
+            let mut reply = CreateRoomResponse { success: false };
+
+            let client =
+                RoomControlServiceClient::connect(TYPESCRIPT_ROOM_CONTROL_SERVICE_ADDRESS).await;
+            match client {
+                Ok(mut the_client) => {
+                    let client_request = tonic::Request::new(CreateRoomRequest {
+                        room_name: request.into_inner().room_name,
+                    });
+                    let response = the_client.create_room(client_request).await?;
+                    reply.success = response.into_inner().success;
+                }
+                Err(_err) => {}
+            }
 
             Ok(Response::new(reply))
         }
@@ -58,10 +74,26 @@ pub mod room_control_service_implementation {
             request: Request<AllowJoinRequest>,
         ) -> Result<Response<AllowJoinResponse>, Status> {
             println!("Got a request: {:?}", request);
+            let extension = request.extensions().get::<MyExtension>().unwrap();
+            let email = (&extension.email).clone().to_string();
 
-            let reply = AllowJoinResponse {
+            let mut reply = AllowJoinResponse {
                 access_token: String::from(""),
             };
+
+            let client =
+                RoomControlServiceClient::connect(TYPESCRIPT_ROOM_CONTROL_SERVICE_ADDRESS).await;
+            match client {
+                Ok(mut the_client) => {
+                    let client_request = tonic::Request::new(AllowJoinRequest {
+                        room_name: request.get_ref().room_name.clone(),
+                        identity: email,
+                    });
+                    let response = the_client.allow_join(client_request).await?;
+                    reply.access_token = response.into_inner().access_token;
+                }
+                Err(_err) => {}
+            }
 
             Ok(Response::new(reply))
         }
@@ -72,12 +104,23 @@ pub mod room_control_service_implementation {
         ) -> Result<Response<ListRoomsResponse>, Status> {
             println!("Got a request: {:?}", request);
 
-            let mut roomList: Vec<RoomInfo> = Vec::new();
-            roomList.push(RoomInfo {
+            let mut room_list: Vec<RoomInfo> = Vec::new();
+            room_list.push(RoomInfo {
                 room_name: String::from(""),
                 number_of_participants: 0,
             });
-            let reply = ListRoomsResponse { rooms: roomList };
+            let mut reply = ListRoomsResponse { rooms: room_list };
+
+            let client =
+                RoomControlServiceClient::connect(TYPESCRIPT_ROOM_CONTROL_SERVICE_ADDRESS).await;
+            match client {
+                Ok(mut the_client) => {
+                    let client_request = tonic::Request::new(ListRoomsRequest {});
+                    let response = the_client.list_rooms(client_request).await?;
+                    reply.rooms = response.into_inner().rooms;
+                }
+                Err(_err) => {}
+            }
 
             Ok(Response::new(reply))
         }
@@ -88,7 +131,20 @@ pub mod room_control_service_implementation {
         ) -> Result<Response<DeleteRoomResponse>, Status> {
             println!("Got a request: {:?}", request);
 
-            let reply = DeleteRoomResponse { success: true };
+            let mut reply = DeleteRoomResponse { success: true };
+
+            let client =
+                RoomControlServiceClient::connect(TYPESCRIPT_ROOM_CONTROL_SERVICE_ADDRESS).await;
+            match client {
+                Ok(mut the_client) => {
+                    let client_request = tonic::Request::new(DeleteRoomRequest {
+                        room_name: request.into_inner().room_name,
+                    });
+                    let response = the_client.delete_room(client_request).await?;
+                    reply.success = response.into_inner().success;
+                }
+                Err(_err) => {}
+            }
 
             Ok(Response::new(reply))
         }
