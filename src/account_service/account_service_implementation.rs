@@ -134,7 +134,7 @@ impl AccountService for MyAccountService {
 }
 
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let address_string = "0.0.0.0:40052";
+    let address_string = "0.0.0.0:40054";
     let addr = address_string.parse()?;
 
     let a_string = Arc::new(Mutex::new(String::from("Hello, world!")));

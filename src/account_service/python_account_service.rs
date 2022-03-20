@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-const PYTHON_ACCOUNT_SERVICE_ADDRESS: &str = "http://127.0.0.1:40053/";
+const PYTHON_ACCOUNT_SERVICE_ADDRESS: &str = "http://127.0.0.1:40052/";
 
 pub async fn user_register_request(email: String) -> Result<bool, Box<dyn std::error::Error>> {
     // This will POST a body of `{"lang":"rust","body":"json"}`
@@ -71,7 +71,7 @@ pub async fn auth_jwt(jwt: String) -> Result<String, Box<dyn std::error::Error>>
     let the_error = &json_response["error"];
     if the_error == &serde_json::Value::Null {
         let email = &json_response["email"];
-        return Ok(email.to_string());
+        return Ok(email.as_str().unwrap().to_string());
     } else {
         return Err(json_response["error"].to_string().into());
     }
