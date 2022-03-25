@@ -28,7 +28,7 @@ serde_json = "1.0"
 tonic-build = "0.6.2"
 
 [source.crates-io]
-registry = "https://github.com/rust-lang/crates.io-index"
+registry = "ustc"
 
 replace-with = 'tuna'
 [source.tuna]
