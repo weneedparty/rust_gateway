@@ -1,14 +1,13 @@
 pub mod room_control_service_implementation {
+    use crate::account_service::python_account_service::PythonAccountStructure;
+    use crate::EnvironmentVariables;
+
     use tokio::runtime::Builder as RuntimeBuilder;
     use tonic::{transport::Server, Request, Response, Status};
-
-    const TYPESCRIPT_ROOM_CONTROL_SERVICE_ADDRESS: &str = "http://127.0.0.1:40053/";
 
     pub mod room_control_service {
         tonic::include_proto!("room_control_service"); //This is the package name?
     }
-
-    use crate::account_service::python_account_service;
 
     use room_control_service::room_control_service_client::RoomControlServiceClient;
     use room_control_service::room_control_service_server::{
@@ -20,11 +19,12 @@ pub mod room_control_service_implementation {
         ListRoomsResponse, RoomInfo,
     };
 
+    use std::sync::{Arc, Mutex};
+
     // #[derive(Debug, Default)]
     #[derive(Debug)]
     pub struct MyRoomControlService {
-        // email: Arc<Mutex<String>>,
-    //use Arc<Mutex<T>> to share variables across threads
+        room_controller_address: String, //use Arc<Mutex<T>> to share variables across threads
     }
 
     #[tonic::async_trait]
@@ -54,7 +54,7 @@ pub mod room_control_service_implementation {
             let mut reply = CreateRoomResponse { success: false };
 
             let client =
-                RoomControlServiceClient::connect(TYPESCRIPT_ROOM_CONTROL_SERVICE_ADDRESS).await;
+                RoomControlServiceClient::connect(self.room_controller_address.clone()).await;
             match client {
                 Ok(mut the_client) => {
                     let client_request = tonic::Request::new(CreateRoomRequest {
@@ -82,7 +82,7 @@ pub mod room_control_service_implementation {
             };
 
             let client =
-                RoomControlServiceClient::connect(TYPESCRIPT_ROOM_CONTROL_SERVICE_ADDRESS).await;
+                RoomControlServiceClient::connect(self.room_controller_address.clone()).await;
             match client {
                 Ok(mut the_client) => {
                     let client_request = tonic::Request::new(AllowJoinRequest {
@@ -112,7 +112,7 @@ pub mod room_control_service_implementation {
             let mut reply = ListRoomsResponse { rooms: room_list };
 
             let client =
-                RoomControlServiceClient::connect(TYPESCRIPT_ROOM_CONTROL_SERVICE_ADDRESS).await;
+                RoomControlServiceClient::connect(self.room_controller_address.clone()).await;
             match client {
                 Ok(mut the_client) => {
                     let client_request = tonic::Request::new(ListRoomsRequest {});
@@ -134,7 +134,7 @@ pub mod room_control_service_implementation {
             let mut reply = DeleteRoomResponse { success: true };
 
             let client =
-                RoomControlServiceClient::connect(TYPESCRIPT_ROOM_CONTROL_SERVICE_ADDRESS).await;
+                RoomControlServiceClient::connect(self.room_controller_address.clone()).await;
             match client {
                 Ok(mut the_client) => {
                     let client_request = tonic::Request::new(DeleteRoomRequest {
@@ -150,10 +150,13 @@ pub mod room_control_service_implementation {
         }
     }
 
-    /// This function will get called on each inbound request, if a `Status`
-    /// is returned, it will cancel the request and return that status to the
-    /// client.
-    fn intercept2(mut req: Request<()>) -> Result<Request<()>, Status> {
+    // / This function will get called on each inbound request, if a `Status`
+    // / is returned, it will cancel the request and return that status to the
+    // / client.
+    fn intercept2(
+        mut req: Request<()>,
+        python_account_structure: &PythonAccountStructure,
+    ) -> Result<Request<()>, Status> {
         println!("Intercepting request: {:?}", req);
 
         let metadata = req.metadata();
@@ -161,6 +164,7 @@ pub mod room_control_service_implementation {
         let jwt = String::from(jwt_).clone();
         println!("The JWT is: {:?}", jwt);
 
+        let the_python_account_structure = (*python_account_structure).clone();
         let handle = std::thread::spawn(move || {
             let mut returnd_email = String::from("");
             let thread_result = RuntimeBuilder::new_current_thread()
@@ -168,7 +172,7 @@ pub mod room_control_service_implementation {
                 .build()
                 .unwrap()
                 .block_on(async {
-                    let result = python_account_service::auth_jwt(jwt.to_string()).await;
+                    let result = the_python_account_structure.auth_jwt(jwt.to_string()).await;
                     match result {
                         Ok(temp_email) => {
                             println!("jwt auth is made, we got email: {:?}", temp_email);
@@ -207,16 +211,28 @@ pub mod room_control_service_implementation {
         email: String,
     }
 
-    pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn run(
+        environment_variables: EnvironmentVariables,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let address_string = "0.0.0.0:40055";
         let addr = address_string.parse()?;
 
-        let my_room_control_service = MyRoomControlService {};
+        let python_account_structure = PythonAccountStructure {
+            service_address: Arc::new(Mutex::new(
+                environment_variables.accountservice_NETWORK_NAME,
+            ))
+            .clone(),
+        };
+        let my_room_control_service = MyRoomControlService {
+            room_controller_address: environment_variables.roommanageservice_NETWORK_NAME,
+        };
 
         // See examples/src/interceptor/client.rs for an example of how to create a
         // named interceptor that can be returned from functions or stored in
         // structs.
-        let svc = RoomControlServiceServer::with_interceptor(my_room_control_service, intercept2);
+        let svc = RoomControlServiceServer::with_interceptor(my_room_control_service, move |req| {
+            intercept2(req, &python_account_structure)
+        });
 
         println!(
             "Room Control Server is running on http://{} ...",

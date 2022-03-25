@@ -12,14 +12,16 @@ use account_service::{
 
 // use std::sync::Arc;
 // use tokio::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
-use crate::account_service::python_account_service;
+use crate::account_service::python_account_service::PythonAccountStructure;
+use crate::EnvironmentVariables;
 
 // #[derive(Debug, Default)]
 #[derive(Debug)]
 pub struct MyAccountService {
-    // shared_string: Arc<Mutex<String>>,
-//use Arc<Mutex<T>> to share variables across threads
+    python_account_structure: PythonAccountStructure,
+    //use Arc<Mutex<T>> to share variables across threads
 }
 
 #[tonic::async_trait]
@@ -48,8 +50,10 @@ impl AccountService for MyAccountService {
             error: "".to_string(),
         };
 
-        let result =
-            python_account_service::user_register_request(request.into_inner().email).await;
+        let result = self
+            .python_account_structure
+            .user_register_request(request.into_inner().email)
+            .await;
         match result {
             Ok(success) => {
                 println!("register request is sent: {:?}", result);
@@ -82,11 +86,13 @@ impl AccountService for MyAccountService {
             error: "".to_string(),
         };
 
-        let result = python_account_service::user_register_confirm(
-            request.get_ref().email.clone(),
-            request.get_ref().random_string.clone(),
-        )
-        .await;
+        let result = self
+            .python_account_structure
+            .user_register_confirm(
+                request.get_ref().email.clone(),
+                request.get_ref().random_string.clone(),
+            )
+            .await;
 
         match result {
             Ok(jwt) => {
@@ -115,7 +121,10 @@ impl AccountService for MyAccountService {
             email: "".to_string(),
         };
 
-        let result = python_account_service::auth_jwt(request.get_ref().jwt.clone()).await;
+        let result = self
+            .python_account_structure
+            .auth_jwt(request.get_ref().jwt.clone())
+            .await;
 
         match result {
             Ok(email) => {
@@ -133,13 +142,20 @@ impl AccountService for MyAccountService {
     }
 }
 
-pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run(
+    environment_variables: EnvironmentVariables,
+) -> Result<(), Box<dyn std::error::Error>> {
     let address_string = "0.0.0.0:40054";
     let addr = address_string.parse()?;
 
-    // let a_string = Arc::new(Mutex::new(String::from("Hello, world!")));
+    let python_account_structure = PythonAccountStructure {
+        service_address: Arc::new(Mutex::new(
+            environment_variables.accountservice_NETWORK_NAME,
+        ))
+        .clone(),
+    };
     let my_account_service = MyAccountService {
-        // shared_string: a_string,
+        python_account_structure: python_account_structure,
     };
 
     let svc = AccountServiceServer::new(my_account_service);
