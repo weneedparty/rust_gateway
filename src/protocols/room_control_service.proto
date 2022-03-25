@@ -1,0 +1,60 @@
+syntax = "proto3";
+package room_control_service;
+
+
+message HelloRequest {
+   string name = 1;
+}
+
+message HelloReply {
+    string message = 1;
+}
+
+message Empty {
+}
+
+
+service RoomControlService {
+    rpc SayHello (HelloRequest) returns (HelloReply);
+    rpc CreateRoom (CreateRoomRequest) returns (CreateRoomResponse);
+    rpc AllowJoin (AllowJoinRequest) returns (AllowJoinResponse);
+    rpc ListRooms (ListRoomsRequest) returns (ListRoomsResponse);
+    rpc DeleteRoom (DeleteRoomRequest) returns (DeleteRoomResponse);
+}
+
+message CreateRoomRequest {
+    string roomName = 1;
+}
+
+message CreateRoomResponse {
+    bool success = 1;
+}
+
+message AllowJoinRequest {
+    string roomName = 1;
+    string identity = 2;
+}
+
+message AllowJoinResponse {
+    string accessToken = 1;
+}
+
+message ListRoomsRequest {
+}
+
+message RoomInfo {
+    string roomName = 1;
+    int32 numberOfParticipants = 2;
+}
+
+message ListRoomsResponse {
+    repeated RoomInfo rooms = 1;
+}
+
+message DeleteRoomRequest {
+    string roomName = 1;
+}
+
+message DeleteRoomResponse {
+    bool success = 1;
+}

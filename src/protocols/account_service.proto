@@ -1,0 +1,55 @@
+syntax = "proto3";
+package account_service;
+
+
+message HelloRequest {
+   string name = 1;
+}
+
+message HelloReply {
+    string message = 1;
+}
+
+message Empty {
+}
+
+
+service AccountService {
+    rpc SayHello (HelloRequest) returns (HelloReply);
+    rpc UserRegisterRequest(RegisterRequest) returns (RegisterReply);
+    rpc UserRegisterConfirm(RegisterConfirmRequest) returns (RegisterConfirmReply);
+    rpc JWTIsOK(JWTIsOKRequest) returns (JWTIsOKReply);
+}
+
+
+message RegisterRequest {
+    string email = 1;
+}
+
+message RegisterReply {
+    string result = 1;
+    string error = 2;
+}
+
+message RegisterConfirmRequest {
+    string email = 1;
+    string random_string = 2;
+}
+
+message JWTObject {
+    string jwt = 1;
+}
+
+message RegisterConfirmReply {
+    JWTObject result = 1;
+    string error = 2;
+}
+
+message JWTIsOKRequest {
+    string jwt = 1;
+}
+
+message JWTIsOKReply {
+    bool ok = 1;
+    string email = 2;
+}

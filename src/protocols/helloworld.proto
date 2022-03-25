@@ -1,0 +1,46 @@
+syntax = "proto3";
+package helloworld;
+
+service Greeter {
+    rpc SayHello (HelloRequest) returns (HelloReply);
+    rpc SendVoice(stream VoiceRequest) returns (Empty);
+    rpc GetVoice(Empty) returns (stream VoiceReply);
+    rpc GetCurrentUsersUUID(Empty) returns (CurrentUsersUUIDReply);
+    rpc StartSpeaking(StartSpeakingRequest) returns (Empty);
+    rpc StopSpeaking(StopSpeakingRequest) returns (Empty);
+}
+
+message Empty {
+}
+
+message VoiceRequest {
+    string uuid = 1;
+    int64 timestamp = 2;
+    bytes voice = 3;
+}
+
+message VoiceReply {
+    string uuid = 1;
+    int64 timestamp = 2;
+    bytes voice = 3;
+}
+
+message CurrentUsersUUIDReply {
+    repeated string uuid = 1;
+}
+
+message StartSpeakingRequest {
+    string uuid = 1;
+}
+
+message StopSpeakingRequest {
+    string uuid = 1;
+}
+
+message HelloRequest {
+   string name = 1;
+}
+
+message HelloReply {
+    string message = 1;
+}
