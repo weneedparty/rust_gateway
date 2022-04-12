@@ -61,6 +61,7 @@ impl AccountService for MyAccountService {
                     reply.result = String::from("OK");
                 } else {
                     reply.result = String::from("Not OK");
+                    reply.error = String::from("Not OK");
                 }
             }
             Err(err) => {
